@@ -16,6 +16,7 @@ import {
   FieldSet,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import type { PollKind } from "@/features/polls";
 
@@ -49,6 +50,7 @@ export function NewPollForm({
   const [state, action, pending] = useActionState<FormState, FormData>(createPollAction, {});
   const [rowKeys, setRowKeys] = useState(() => Array.from({ length: copy.minRows }, (_, i) => i));
   const [nextKey, setNextKey] = useState<number>(copy.minRows);
+  const [allAvailable, setAllAvailable] = useState(true);
 
   function addRow() {
     setRowKeys((keys) => [...keys, nextKey]);
@@ -97,6 +99,15 @@ export function NewPollForm({
             {copy.add}
           </Button>
         </FieldSet>
+        {kind === "date" && (
+          <Field orientation="horizontal">
+            <Switch id="poll-all-available" checked={allAvailable} onCheckedChange={setAllAvailable} />
+            <FieldLabel htmlFor="poll-all-available" className="font-normal">
+              모두가능 선택지 넣기
+            </FieldLabel>
+            {allAvailable && <input type="hidden" name="allAvailable" value="on" />}
+          </Field>
+        )}
         <Field>
           <FieldLabel htmlFor="poll-deadline">마감 일시</FieldLabel>
           <Input id="poll-deadline" name="deadline" type="datetime-local" required />

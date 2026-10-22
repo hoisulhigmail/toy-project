@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { requireOrganizer } from "@/app/current-member";
 import { CopyButton } from "@/components/app/copy-button";
+import { DeletePollButton } from "@/components/app/delete-poll-button";
 import { DownloadButton } from "@/components/app/download-button";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -132,6 +133,7 @@ export default async function AdminPollsPage() {
                     <DownloadButton label="Markdown 받기" fileName={record.fileName} content={record.markdown} />
                   </>
                 )}
+                <DeletePollButton pollId={poll.id} title={poll.title} />
               </CardFooter>
             </Card>
           );
