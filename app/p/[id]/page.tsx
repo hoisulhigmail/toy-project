@@ -10,7 +10,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { listMembers } from "@/features/members/server";
-import { eligibleMemberIds, formatCandidateDate, formatKst, isClosed, tallyPoll } from "@/features/polls";
+import { eligibleMemberIds, formatKst, isClosed, optionLabel, tallyPoll } from "@/features/polls";
 import { getPoll, listBallotEntries } from "@/features/polls/server";
 
 export default async function PollPage({ params, searchParams }: PageProps<"/p/[id]">) {
@@ -42,14 +42,15 @@ export default async function PollPage({ params, searchParams }: PageProps<"/p/[
 
   const audienceLabel = poll.audience.kind === "group" ? "대상" : "전체";
   const tally = tallyPoll({
-    dates: poll.dates,
+    options: poll.options,
     ballots: entries,
     eligibleMemberIds: eligible,
   });
-  const myDateIds = entries.filter((entry) => entry.memberId === member.id).map((entry) => entry.dateId);
+  const myOptionIds = entries.filter((entry) => entry.memberId === member.id).map((entry) => entry.optionId);
   const closed = isClosed(poll.deadline);
-  const showForm = !closed && (myDateIds.length === 0 || edit === "1");
-  const top = new Set(tally.topDateIds);
+  const showForm = !closed && (myOptionIds.length === 0 || edit === "1");
+  const top = new Set(tally.topOptionIds);
+  const isItem = poll.kind === "item";
 
   return (
     <PageShell memberName={member.name}>
@@ -79,8 +80,9 @@ export default async function PollPage({ params, searchParams }: PageProps<"/p/[
           <CardContent>
             <BallotForm
               pollId={poll.id}
-              dates={poll.dates.map((d) => ({ id: d.id, label: formatCandidateDate(d.date) }))}
-              initialDateIds={myDateIds}
+              legend={isItem ? "마음에 드는 항목을 모두 골라 주세요" : "가능한 날을 모두 골라 주세요"}
+              options={poll.options.map((o) => ({ id: o.id, label: optionLabel(poll.kind, o.value) }))}
+              initialOptionIds={myOptionIds}
             />
           </CardContent>
         </Card>
@@ -96,11 +98,11 @@ export default async function PollPage({ params, searchParams }: PageProps<"/p/[
           </CardHeader>
           <CardContent>
             <ul className="flex flex-col gap-2">
-              {poll.dates.map((date) => {
-                const isTop = top.has(date.id);
+              {poll.options.map((option) => {
+                const isTop = top.has(option.id);
                 return (
                   <li
-                    key={date.id}
+                    key={option.id}
                     data-top={isTop || undefined}
                     className={cn(
                       "flex items-center justify-between gap-3 rounded-lg border px-4 py-3",
@@ -108,10 +110,10 @@ export default async function PollPage({ params, searchParams }: PageProps<"/p/[
                     )}
                   >
                     <span className="flex items-center gap-2">
-                      {formatCandidateDate(date.date)}
-                      {isTop && <Badge>가장 많이 가능</Badge>}
+                      {optionLabel(poll.kind, option.value)}
+                      {isTop && <Badge>{isItem ? "가장 많이 선택" : "가장 많이 가능"}</Badge>}
                     </span>
-                    <span className="font-medium tabular-nums">{tally.counts[date.id]}표</span>
+                    <span className="font-medium tabular-nums">{tally.counts[option.id]}표</span>
                   </li>
                 );
               })}

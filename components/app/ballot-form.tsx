@@ -9,18 +9,20 @@ import { Field, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet } from
 
 export function BallotForm({
   pollId,
-  dates,
-  initialDateIds,
+  legend,
+  options,
+  initialOptionIds,
 }: {
   pollId: string;
-  dates: { id: string; label: string }[];
-  initialDateIds: string[];
+  legend: string;
+  options: { id: string; label: string }[];
+  initialOptionIds: string[];
 }) {
   const [state, action, pending] = useActionState<BallotState, FormData>(
     submitBallotAction.bind(null, pollId),
     {}
   );
-  const [selected, setSelected] = useState(() => new Set(initialDateIds));
+  const [selected, setSelected] = useState(() => new Set(initialOptionIds));
 
   function toggle(id: string, checked: boolean) {
     setSelected((current) => {
@@ -35,28 +37,28 @@ export function BallotForm({
     <form action={action}>
       <FieldGroup>
         <FieldSet>
-          <FieldLegend>가능한 날을 모두 골라 주세요</FieldLegend>
+          <FieldLegend>{legend}</FieldLegend>
           <FieldGroup className="gap-3">
-            {dates.map((date) => (
-              <Field key={date.id} orientation="horizontal">
+            {options.map((option) => (
+              <Field key={option.id} orientation="horizontal">
                 <Checkbox
-                  id={`date-${date.id}`}
-                  checked={selected.has(date.id)}
-                  onCheckedChange={(checked) => toggle(date.id, checked)}
+                  id={`option-${option.id}`}
+                  checked={selected.has(option.id)}
+                  onCheckedChange={(checked) => toggle(option.id, checked)}
                 />
-                <FieldLabel htmlFor={`date-${date.id}`} className="font-normal">
-                  {date.label}
+                <FieldLabel htmlFor={`option-${option.id}`} className="font-normal">
+                  {option.label}
                 </FieldLabel>
               </Field>
             ))}
           </FieldGroup>
         </FieldSet>
         {[...selected].map((id) => (
-          <input key={id} type="hidden" name="dateId" value={id} />
+          <input key={id} type="hidden" name="optionId" value={id} />
         ))}
         <FieldError>{state.error}</FieldError>
         <Button type="submit" disabled={pending || selected.size === 0} className="self-start">
-          {initialDateIds.length > 0 ? "수정해서 제출하기" : "투표 제출하기"}
+          {initialOptionIds.length > 0 ? "수정해서 제출하기" : "투표 제출하기"}
         </Button>
       </FieldGroup>
     </form>

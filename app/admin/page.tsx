@@ -31,16 +31,21 @@ export default async function AdminPollsPage() {
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-heading text-2xl font-semibold tracking-tight">투표 목록</h1>
-        <Link href="/admin/polls/new" className={buttonVariants()}>
-          새 날짜 투표
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/admin/polls/new" className={buttonVariants()}>
+            새 날짜 투표
+          </Link>
+          <Link href="/admin/polls/new?kind=item" className={buttonVariants({ variant: "secondary" })}>
+            새 항목 투표
+          </Link>
+        </div>
       </div>
 
       {polls.length === 0 ? (
         <Empty>
           <EmptyHeader>
             <EmptyTitle>아직 만든 투표가 없습니다</EmptyTitle>
-            <EmptyDescription>날짜 투표를 만들고 공유 URL을 팀에 보내 보세요.</EmptyDescription>
+            <EmptyDescription>날짜 투표나 항목 투표를 만들고 공유 URL을 팀에 보내 보세요.</EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
             <Link href="/admin/polls/new" className={buttonVariants({ variant: "outline" })}>
@@ -53,7 +58,7 @@ export default async function AdminPollsPage() {
           const eligible = new Set(eligibleMemberIds(poll.audience, memberIds));
           const isGroup = poll.audience.kind === "group";
           const tally = tallyPoll({
-            dates: poll.dates,
+            options: poll.options,
             ballots: entries.filter((entry) => entry.pollId === poll.id),
             eligibleMemberIds: [...eligible],
           });
@@ -68,6 +73,7 @@ export default async function AdminPollsPage() {
                 <CardTitle>{poll.title}</CardTitle>
                 <CardDescription>마감 {formatKst(poll.deadline)}</CardDescription>
                 <CardAction className="flex gap-1">
+                  <Badge variant="secondary">{poll.kind === "item" ? "항목" : "날짜"}</Badge>
                   {isGroup && <Badge variant="outline">소그룹 {eligible.size}명</Badge>}
                   <Badge variant={closed ? "secondary" : "default"}>{closed ? "마감" : "진행 중"}</Badge>
                 </CardAction>

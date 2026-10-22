@@ -6,8 +6,8 @@ import { redirect } from "next/navigation";
 import { requireOrganizer } from "@/app/current-member";
 import { validateNewMember } from "@/features/members";
 import { addMember, removeMember, setOrganizer } from "@/features/members/server";
-import { validateNewPoll } from "@/features/polls";
-import { createDatePoll } from "@/features/polls/server";
+import { validateNewItemPoll, validateNewPoll } from "@/features/polls";
+import { createDatePoll, createItemPoll } from "@/features/polls/server";
 
 export type FormState = { error?: string; ok?: boolean };
 
@@ -42,18 +42,24 @@ export async function setOrganizerAction(memberId: string, isOrganizer: boolean)
 
 export async function createPollAction(_prev: FormState, formData: FormData): Promise<FormState> {
   await requireOrganizer();
-  const result = validateNewPoll({
+  const common = {
     title: String(formData.get("title") ?? ""),
     description: String(formData.get("description") ?? ""),
-    dates: formData.getAll("date").map(String),
     deadline: String(formData.get("deadline") ?? ""),
     audience:
       formData.get("audience") === "group"
-        ? { kind: "group", memberIds: formData.getAll("targetId").map(String) }
-        : { kind: "all" },
-  });
-  if (!result.ok) return { error: result.error };
+        ? { kind: "group" as const, memberIds: formData.getAll("targetId").map(String) }
+        : { kind: "all" as const },
+  };
 
-  await createDatePoll(result.value);
+  if (formData.get("kind") === "item") {
+    const result = validateNewItemPoll({ ...common, items: formData.getAll("item").map(String) });
+    if (!result.ok) return { error: result.error };
+    await createItemPoll(result.value);
+  } else {
+    const result = validateNewPoll({ ...common, dates: formData.getAll("date").map(String) });
+    if (!result.ok) return { error: result.error };
+    await createDatePoll(result.value);
+  }
   redirect("/admin");
 }
