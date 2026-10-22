@@ -4,6 +4,7 @@ import { PlusIcon, XIcon } from "@phosphor-icons/react";
 import { useActionState, useState } from "react";
 
 import { createPollAction, type FormState } from "@/app/admin/actions";
+import { AudiencePicker } from "@/components/app/audience-picker";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -17,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-export function NewPollForm() {
+export function NewPollForm({ members }: { members: { id: string; name: string }[] }) {
   const [state, action, pending] = useActionState<FormState, FormData>(createPollAction, {});
   const [dateKeys, setDateKeys] = useState([0]);
   const [nextKey, setNextKey] = useState(1);
@@ -69,6 +70,7 @@ export function NewPollForm() {
           <Input id="poll-deadline" name="deadline" type="datetime-local" required />
           <FieldDescription>한국 시간 기준입니다. 마감이 지나면 투표와 수정이 막힙니다.</FieldDescription>
         </Field>
+        <AudiencePicker members={members} />
         <FieldError>{state.error}</FieldError>
         <Button type="submit" disabled={pending} className="self-start">
           투표 만들기

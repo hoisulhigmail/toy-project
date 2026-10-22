@@ -2,6 +2,7 @@ import "server-only";
 
 import { db } from "@/lib/supabase";
 
+import type { Audience } from "./audience";
 import type { BallotEntry } from "./tally";
 import type { NewPoll } from "./validate";
 
@@ -13,6 +14,7 @@ export type Poll = {
   description: string;
   deadline: Date;
   dates: CandidateDate[];
+  audience: Audience;
 };
 
 type PollRow = {
@@ -20,12 +22,14 @@ type PollRow = {
   title: string;
   description: string;
   deadline: string;
+  audience: "all" | "group";
   poll_dates: { id: number; candidate_date: string }[];
+  poll_targets: { member_id: string }[];
 };
 
 // ballot_choices also links polls to poll_dates, so name the direct FK.
 const COLUMNS =
-  "id, title, description, deadline, poll_dates!poll_dates_poll_id_fkey (id, candidate_date)";
+  "id, title, description, deadline, audience, poll_dates!poll_dates_poll_id_fkey (id, candidate_date), poll_targets (member_id)";
 
 function toPoll(row: PollRow): Poll {
   return {
@@ -36,6 +40,10 @@ function toPoll(row: PollRow): Poll {
     dates: row.poll_dates
       .map((d) => ({ id: String(d.id), date: d.candidate_date }))
       .sort((a, b) => a.date.localeCompare(b.date)),
+    audience:
+      row.audience === "group"
+        ? { kind: "group", memberIds: row.poll_targets.map((t) => t.member_id) }
+        : { kind: "all" },
   };
 }
 
@@ -45,6 +53,7 @@ export async function createDatePoll(poll: NewPoll): Promise<string> {
     p_description: poll.description,
     p_deadline: poll.deadline.toISOString(),
     p_dates: poll.dates,
+    p_member_ids: poll.audience.kind === "group" ? poll.audience.memberIds : null,
   });
   if (error) throw error;
   return data as string;
@@ -84,6 +93,7 @@ const BALLOT_ERRORS: Record<string, string> = {
   poll_closed: "마감된 투표라 더 이상 제출할 수 없습니다.",
   poll_not_found: "투표를 찾을 수 없습니다.",
   member_not_found: "명단에 없는 사람은 투표할 수 없습니다.",
+  not_target: "이 투표의 대상이 아닙니다.",
   no_dates: "가능한 날을 하나 이상 골라 주세요.",
   invalid_date: "이 투표의 후보 날짜가 아닙니다.",
 };
