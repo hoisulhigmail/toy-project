@@ -1,7 +1,9 @@
 export { tallyPoll } from "./tally";
 export type { BallotEntry, PollTally } from "./tally";
 export { formatCandidateDate, formatKst, isClosed, parseKstDateTime } from "./deadline";
-export { validateNewPoll } from "./validate";
-export type { NewPoll, NewPollInput } from "./validate";
+export { validateNewItemPoll, validateNewPoll } from "./validate";
+export type { NewItemPoll, NewItemPollInput, NewPoll, NewPollInput } from "./validate";
 export { eligibleMemberIds } from "./audience";
 export type { Audience } from "./audience";
+export { optionLabel } from "./options";
+export type { PollKind, PollOption } from "./options";

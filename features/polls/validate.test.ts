@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 
-import { validateNewPoll } from "@/features/polls";
+import { validateNewItemPoll, validateNewPoll } from "@/features/polls";
 
 const now = new Date("2026-10-22T00:00:00.000Z");
 
@@ -69,4 +69,32 @@ test("소그룹인데 아무도 고르지 않으면 날짜 투표를 만들 수 
   );
 
   expect(result).toEqual({ ok: false, error: "소그룹 대상을 한 명 이상 골라 주세요." });
+});
+
+test("후보 항목은 공백을 지우고 같은 글은 한 번만 넣으며 넣은 순서를 지킨다", () => {
+  const result = validateNewItemPoll(
+    { title: "활동", description: "", items: [" 볼링 ", "방탈출", "볼링", ""], deadline: "2026-10-30T18:00" },
+    now
+  );
+
+  expect(result.ok && result.value.items).toEqual(["볼링", "방탈출"]);
+  expect(result.ok && result.value.audience).toEqual({ kind: "all" });
+});
+
+test("후보 항목이 2개보다 적으면 항목 투표를 만들 수 없다", () => {
+  const base = { title: "활동", description: "", deadline: "2026-10-30T18:00" };
+
+  expect(validateNewItemPoll({ ...base, items: ["볼링"] }, now)).toEqual({
+    ok: false,
+    error: "후보 항목을 두 개 이상 넣어 주세요.",
+  });
+  expect(validateNewItemPoll({ ...base, items: ["볼링", " 볼링", ""] }, now).ok).toBe(false);
+});
+
+test("항목 투표도 제목, 마감, 소그룹 규칙은 날짜 투표와 같다", () => {
+  const base = { title: "활동", description: "", items: ["a", "b"], deadline: "2026-10-30T18:00" };
+
+  expect(validateNewItemPoll({ ...base, title: " " }, now).ok).toBe(false);
+  expect(validateNewItemPoll({ ...base, deadline: "2026-10-21T18:00" }, now).ok).toBe(false);
+  expect(validateNewItemPoll({ ...base, audience: { kind: "group", memberIds: [] } }, now).ok).toBe(false);
 });

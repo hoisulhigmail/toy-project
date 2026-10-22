@@ -15,10 +15,10 @@ export async function submitBallotAction(
   const member = await getCurrentMember();
   if (!member) redirect(`/?next=/p/${pollId}`);
 
-  const dateIds = formData.getAll("dateId").map(String);
-  if (dateIds.length === 0) return { error: "가능한 날을 하나 이상 골라 주세요." };
+  const optionIds = formData.getAll("optionId").map(String);
+  if (optionIds.length === 0) return { error: "하나 이상 골라 주세요." };
 
-  const result = await submitBallot(pollId, member.id, dateIds);
+  const result = await submitBallot(pollId, member.id, optionIds);
   if (!result.ok) return { error: result.error };
 
   redirect(`/p/${pollId}`);
