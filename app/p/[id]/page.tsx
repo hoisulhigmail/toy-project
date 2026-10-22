@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { isTestMember } from "@/features/members";
 import { listMembers } from "@/features/members/server";
 import { eligibleMemberIds, formatKst, isClosed, optionLabel, tallyPoll } from "@/features/polls";
 import { getPoll, listBallotEntries } from "@/features/polls/server";
@@ -24,7 +25,11 @@ export default async function PollPage({ params, searchParams }: PageProps<"/p/[
   if (!poll) notFound();
 
   const [members, entries] = await Promise.all([listMembers(), listBallotEntries([poll.id])]);
-  const eligible = eligibleMemberIds(poll.audience, members.map((m) => m.id));
+  const eligible = eligibleMemberIds(
+    poll.audience,
+    members.map((m) => m.id),
+    members.filter(isTestMember).map((m) => m.id)
+  );
 
   // Outside a small group, nothing about the poll is shown.
   if (!eligible.includes(member.id)) {

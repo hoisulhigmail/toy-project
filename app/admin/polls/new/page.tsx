@@ -1,6 +1,7 @@
 import { requireOrganizer } from "@/app/current-member";
 import { NewPollForm } from "@/components/app/new-poll-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { isTestMember } from "@/features/members";
 import { listMembers } from "@/features/members/server";
 
 // ?kind=item opens the item poll form; anything else is a date poll.
@@ -28,6 +29,7 @@ export default async function NewPollPage({ searchParams }: PageProps<"/admin/po
           key={isItem ? "item" : "date"}
           kind={isItem ? "item" : "date"}
           members={members.map((m) => ({ id: m.id, name: m.name }))}
+          wholeRosterCount={members.filter((m) => !isTestMember(m)).length}
         />
       </CardContent>
     </Card>

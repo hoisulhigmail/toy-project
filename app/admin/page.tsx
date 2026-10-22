@@ -16,7 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
-import { joinEmails } from "@/features/members";
+import { isTestMember, joinEmails } from "@/features/members";
 import { listMembers } from "@/features/members/server";
 import {
   buildAnnouncement,
@@ -36,6 +36,7 @@ export default async function AdminPollsPage() {
   const [members, polls] = await Promise.all([listMembers(), listPolls()]);
   const entries = await listBallotEntries(polls.map((poll) => poll.id));
   const memberIds = members.map((member) => member.id);
+  const testIds = members.filter(isTestMember).map((member) => member.id);
   const now = new Date();
 
   return (
@@ -66,7 +67,7 @@ export default async function AdminPollsPage() {
         </Empty>
       ) : (
         polls.map((poll) => {
-          const eligible = new Set(eligibleMemberIds(poll.audience, memberIds));
+          const eligible = new Set(eligibleMemberIds(poll.audience, memberIds, testIds));
           const isGroup = poll.audience.kind === "group";
           const tally = tallyPoll({
             options: poll.options,
