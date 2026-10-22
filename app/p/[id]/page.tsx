@@ -10,7 +10,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { listMembers } from "@/features/members/server";
-import { formatCandidateDate, formatKst, isClosed, tallyPoll } from "@/features/polls";
+import { eligibleMemberIds, formatCandidateDate, formatKst, isClosed, tallyPoll } from "@/features/polls";
 import { getPoll, listBallotEntries } from "@/features/polls/server";
 
 export default async function PollPage({ params, searchParams }: PageProps<"/p/[id]">) {
@@ -24,10 +24,27 @@ export default async function PollPage({ params, searchParams }: PageProps<"/p/[
   if (!poll) notFound();
 
   const [members, entries] = await Promise.all([listMembers(), listBallotEntries([poll.id])]);
+  const eligible = eligibleMemberIds(poll.audience, members.map((m) => m.id));
+
+  // Outside a small group, nothing about the poll is shown.
+  if (!eligible.includes(member.id)) {
+    return (
+      <PageShell memberName={member.name}>
+        <Alert>
+          <AlertTitle>
+            <h1>이 투표의 대상이 아닙니다</h1>
+          </AlertTitle>
+          <AlertDescription>투표 대상이 맞다면 총무에게 문의해 주세요.</AlertDescription>
+        </Alert>
+      </PageShell>
+    );
+  }
+
+  const audienceLabel = poll.audience.kind === "group" ? "대상" : "전체";
   const tally = tallyPoll({
     dates: poll.dates,
     ballots: entries,
-    eligibleMemberIds: members.map((m) => m.id),
+    eligibleMemberIds: eligible,
   });
   const myDateIds = entries.filter((entry) => entry.memberId === member.id).map((entry) => entry.dateId);
   const closed = isClosed(poll.deadline);
@@ -74,7 +91,7 @@ export default async function PollPage({ params, searchParams }: PageProps<"/p/[
               <h2>현재 결과</h2>
             </CardTitle>
             <CardDescription>
-              {tally.voterCount}명 투표 · 전체 {members.length}명
+              {tally.voterCount}명 투표 · {audienceLabel} {eligible.length}명
             </CardDescription>
           </CardHeader>
           <CardContent>

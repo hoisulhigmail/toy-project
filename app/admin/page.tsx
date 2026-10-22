@@ -16,7 +16,7 @@ import {
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { joinEmails } from "@/features/members";
 import { listMembers } from "@/features/members/server";
-import { formatKst, isClosed, tallyPoll } from "@/features/polls";
+import { eligibleMemberIds, formatKst, isClosed, tallyPoll } from "@/features/polls";
 import { listBallotEntries, listPolls } from "@/features/polls/server";
 
 export default async function AdminPollsPage() {
@@ -50,13 +50,15 @@ export default async function AdminPollsPage() {
         </Empty>
       ) : (
         polls.map((poll) => {
+          const eligible = new Set(eligibleMemberIds(poll.audience, memberIds));
+          const isGroup = poll.audience.kind === "group";
           const tally = tallyPoll({
             dates: poll.dates,
             ballots: entries.filter((entry) => entry.pollId === poll.id),
-            eligibleMemberIds: memberIds,
+            eligibleMemberIds: [...eligible],
           });
           const voted = new Set(tally.voterIds);
-          const nonVoters = members.filter((member) => !voted.has(member.id));
+          const nonVoters = members.filter((member) => eligible.has(member.id) && !voted.has(member.id));
           const closed = isClosed(poll.deadline, now);
           const sharePath = `/p/${poll.id}`;
 
@@ -65,13 +67,14 @@ export default async function AdminPollsPage() {
               <CardHeader>
                 <CardTitle>{poll.title}</CardTitle>
                 <CardDescription>마감 {formatKst(poll.deadline)}</CardDescription>
-                <CardAction>
+                <CardAction className="flex gap-1">
+                  {isGroup && <Badge variant="outline">소그룹 {eligible.size}명</Badge>}
                   <Badge variant={closed ? "secondary" : "default"}>{closed ? "마감" : "진행 중"}</Badge>
                 </CardAction>
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
                 <p className="text-sm">
-                  투표 완료 <strong>{tally.voterCount}</strong> / 전체 {members.length}
+                  투표 완료 <strong>{tally.voterCount}</strong> / {isGroup ? "대상" : "전체"} {eligible.size}
                 </p>
                 <div className="flex flex-col gap-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">

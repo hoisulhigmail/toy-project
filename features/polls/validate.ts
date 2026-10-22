@@ -1,3 +1,4 @@
+import type { Audience } from "./audience";
 import { isClosed, parseKstDateTime } from "./deadline";
 
 export type NewPollInput = {
@@ -5,6 +6,7 @@ export type NewPollInput = {
   description: string;
   dates: string[];
   deadline: string;
+  audience?: Audience;
 };
 
 export type NewPoll = {
@@ -12,6 +14,7 @@ export type NewPoll = {
   description: string;
   dates: string[];
   deadline: Date;
+  audience: Audience;
 };
 
 type Validation = { ok: true; value: NewPoll } | { ok: false; error: string };
@@ -29,5 +32,13 @@ export function validateNewPoll(input: NewPollInput, now: Date = new Date()): Va
   if (!deadline) return { ok: false, error: "마감 일시를 입력해 주세요." };
   if (isClosed(deadline, now)) return { ok: false, error: "마감 일시는 지금보다 뒤여야 합니다." };
 
-  return { ok: true, value: { title, description: input.description.trim(), dates, deadline } };
+  const audience: Audience =
+    input.audience?.kind === "group"
+      ? { kind: "group", memberIds: [...new Set(input.audience.memberIds)] }
+      : { kind: "all" };
+  if (audience.kind === "group" && audience.memberIds.length === 0) {
+    return { ok: false, error: "소그룹 대상을 한 명 이상 골라 주세요." };
+  }
+
+  return { ok: true, value: { title, description: input.description.trim(), dates, deadline, audience } };
 }

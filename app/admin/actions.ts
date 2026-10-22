@@ -47,6 +47,10 @@ export async function createPollAction(_prev: FormState, formData: FormData): Pr
     description: String(formData.get("description") ?? ""),
     dates: formData.getAll("date").map(String),
     deadline: String(formData.get("deadline") ?? ""),
+    audience:
+      formData.get("audience") === "group"
+        ? { kind: "group", memberIds: formData.getAll("targetId").map(String) }
+        : { kind: "all" },
   });
   if (!result.ok) return { error: result.error };
 
