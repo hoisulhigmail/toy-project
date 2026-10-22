@@ -7,3 +7,5 @@ export { eligibleMemberIds } from "./audience";
 export type { Audience } from "./audience";
 export { optionLabel } from "./options";
 export type { PollKind, PollOption } from "./options";
+export { buildAnnouncement, buildResultRecord } from "./announcement";
+export type { PollResult } from "./announcement";

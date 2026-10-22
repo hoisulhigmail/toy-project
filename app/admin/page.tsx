@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { requireOrganizer } from "@/app/current-member";
 import { CopyButton } from "@/components/app/copy-button";
+import { DownloadButton } from "@/components/app/download-button";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -16,7 +17,16 @@ import {
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { joinEmails } from "@/features/members";
 import { listMembers } from "@/features/members/server";
-import { eligibleMemberIds, formatKst, isClosed, tallyPoll } from "@/features/polls";
+import {
+  buildAnnouncement,
+  buildResultRecord,
+  eligibleMemberIds,
+  formatKst,
+  isClosed,
+  optionLabel,
+  tallyPoll,
+  type PollResult,
+} from "@/features/polls";
 import { listBallotEntries, listPolls } from "@/features/polls/server";
 
 export default async function AdminPollsPage() {
@@ -66,6 +76,17 @@ export default async function AdminPollsPage() {
           const nonVoters = members.filter((member) => eligible.has(member.id) && !voted.has(member.id));
           const closed = isClosed(poll.deadline, now);
           const sharePath = `/p/${poll.id}`;
+          const result: PollResult = {
+            kind: poll.kind,
+            title: poll.title,
+            description: poll.description,
+            audience: poll.audience.kind,
+            deadline: poll.deadline,
+            voterCount: tally.voterCount,
+            eligibleCount: eligible.size,
+            options: poll.options.map((o) => ({ label: optionLabel(poll.kind, o.value), count: tally.counts[o.id] })),
+          };
+          const record = closed ? buildResultRecord(result) : null;
 
           return (
             <Card key={poll.id}>
@@ -101,6 +122,16 @@ export default async function AdminPollsPage() {
                 <Link href={sharePath} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                   투표하러 가기
                 </Link>
+                {record && (
+                  <>
+                    <CopyButton
+                      label="공지 메일 복사"
+                      value={buildAnnouncement(result)}
+                      copiedLabel="공지 메일을 복사했습니다"
+                    />
+                    <DownloadButton label="Markdown 받기" fileName={record.fileName} content={record.markdown} />
+                  </>
+                )}
               </CardFooter>
             </Card>
           );

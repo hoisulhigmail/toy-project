@@ -38,3 +38,9 @@ export function formatCandidateDate(value: string): string {
   const weekday = WEEKDAYS[new Date(Date.UTC(year, month - 1, day)).getUTCDay()];
   return `${month}월 ${day}일 (${weekday})`;
 }
+
+// "YYYY-MM-DD" of the given moment in Korea time.
+export function formatKstDay(date: Date): string {
+  const p = kstParts(date);
+  return `${p.year}-${pad(p.month)}-${pad(p.day)}`;
+}
