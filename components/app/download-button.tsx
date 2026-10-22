@@ -22,7 +22,8 @@ export function DownloadButton({
     link.href = url;
     link.download = fileName;
     link.click();
-    URL.revokeObjectURL(url);
+    // Revoking right away cancels the download, so wait until it has started.
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   return (
