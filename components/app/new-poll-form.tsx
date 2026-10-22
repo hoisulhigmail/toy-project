@@ -42,9 +42,11 @@ const COPY = {
 export function NewPollForm({
   kind,
   members,
+  wholeRosterCount,
 }: {
   kind: PollKind;
   members: { id: string; name: string }[];
+  wholeRosterCount: number;
 }) {
   const copy = COPY[kind];
   const [state, action, pending] = useActionState<FormState, FormData>(createPollAction, {});
@@ -113,7 +115,7 @@ export function NewPollForm({
           <Input id="poll-deadline" name="deadline" type="datetime-local" required />
           <FieldDescription>한국 시간 기준입니다. 마감이 지나면 투표와 수정이 막힙니다.</FieldDescription>
         </Field>
-        <AudiencePicker members={members} />
+        <AudiencePicker members={members} wholeRosterCount={wholeRosterCount} />
         <FieldError>{state.error}</FieldError>
         <Button type="submit" disabled={pending} className="self-start">
           투표 만들기

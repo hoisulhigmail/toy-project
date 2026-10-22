@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 
-import { joinEmails, validateNewMember } from "@/features/members";
+import { isTestMember, joinEmails, validateNewMember } from "@/features/members";
 
 test("이름, 사번, 메일 주소가 모두 있어야 명단에 추가할 수 있다", () => {
   expect(validateNewMember({ name: " 홍길동 ", employeeNo: " 1234 ", email: "hong@lge.com" })).toEqual({
@@ -18,4 +18,9 @@ test("메일 주소 형식이 아니면 명단에 추가할 수 없다", () => {
 
 test("미투표자 메일 주소는 세미콜론과 공백으로 이어 붙인다", () => {
   expect(joinEmails([{ email: "a@x.com" }, { email: "b@x.com" }])).toBe("a@x.com; b@x.com");
+});
+
+test("검증 계정은 사번으로 구분한다", () => {
+  expect(isTestMember({ employeeNo: "T9001" })).toBe(true);
+  expect(isTestMember({ employeeNo: "262723" })).toBe(false);
 });

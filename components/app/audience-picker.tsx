@@ -11,7 +11,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 type Member = { id: string; name: string };
 
 // Chooses between the whole roster and a small group picked from it.
-export function AudiencePicker({ members }: { members: Member[] }) {
+// wholeRosterCount is the size of a whole-roster audience, which leaves out the
+// test account even though it can still be picked for a small group.
+export function AudiencePicker({ members, wholeRosterCount }: { members: Member[]; wholeRosterCount: number }) {
   const [kind, setKind] = useState<"all" | "group">("all");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -37,7 +39,7 @@ export function AudiencePicker({ members }: { members: Member[] }) {
         <Field orientation="horizontal">
           <RadioGroupItem value="all" id="audience-all" />
           <FieldLabel htmlFor="audience-all" className="font-normal">
-            명단 전체 ({members.length}명)
+            명단 전체 ({wholeRosterCount}명)
           </FieldLabel>
         </Field>
         <Field orientation="horizontal">

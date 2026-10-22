@@ -25,3 +25,11 @@ export function validateNewMember(input: NewMember): Validation {
 export function joinEmails(members: { email: string }[]): string {
   return members.map((member) => member.email).join("; ");
 }
+
+// The 검증총무 account is for trying features; it is never part of a
+// whole-roster poll and joins polls only when picked for a small group.
+const TEST_EMPLOYEE_NOS = new Set(["T9001"]);
+
+export function isTestMember(member: { employeeNo: string }): boolean {
+  return TEST_EMPLOYEE_NOS.has(member.employeeNo);
+}
