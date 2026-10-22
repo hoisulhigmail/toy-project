@@ -83,6 +83,7 @@ export default async function PollPage({ params, searchParams }: PageProps<"/p/[
               legend={isItem ? "마음에 드는 항목을 모두 골라 주세요" : "가능한 날을 모두 골라 주세요"}
               options={poll.options.map((o) => ({ id: o.id, label: optionLabel(poll.kind, o.value) }))}
               initialOptionIds={myOptionIds}
+              allAvailable={poll.allAvailable}
             />
           </CardContent>
         </Card>

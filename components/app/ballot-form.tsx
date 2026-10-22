@@ -12,11 +12,14 @@ export function BallotForm({
   legend,
   options,
   initialOptionIds,
+  allAvailable = false,
 }: {
   pollId: string;
   legend: string;
   options: { id: string; label: string }[];
   initialOptionIds: string[];
+  // Shows a 모두가능 choice that is checked exactly when every option is.
+  allAvailable?: boolean;
 }) {
   const [state, action, pending] = useActionState<BallotState, FormData>(
     submitBallotAction.bind(null, pollId),
@@ -39,6 +42,16 @@ export function BallotForm({
         <FieldSet>
           <FieldLegend>{legend}</FieldLegend>
           <FieldGroup className="gap-3">
+            {allAvailable && (
+              <Field orientation="horizontal">
+                <Checkbox
+                  id="option-all"
+                  checked={options.length > 0 && options.every((o) => selected.has(o.id))}
+                  onCheckedChange={(checked) => setSelected(new Set(checked ? options.map((o) => o.id) : []))}
+                />
+                <FieldLabel htmlFor="option-all">모두가능</FieldLabel>
+              </Field>
+            )}
             {options.map((option) => (
               <Field key={option.id} orientation="horizontal">
                 <Checkbox

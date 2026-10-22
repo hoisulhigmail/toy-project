@@ -7,7 +7,7 @@ import { requireOrganizer } from "@/app/current-member";
 import { validateNewMember } from "@/features/members";
 import { addMember, removeMember, setOrganizer } from "@/features/members/server";
 import { validateNewItemPoll, validateNewPoll } from "@/features/polls";
-import { createDatePoll, createItemPoll } from "@/features/polls/server";
+import { createDatePoll, createItemPoll, deletePoll } from "@/features/polls/server";
 
 export type FormState = { error?: string; ok?: boolean };
 
@@ -59,7 +59,13 @@ export async function createPollAction(_prev: FormState, formData: FormData): Pr
   } else {
     const result = validateNewPoll({ ...common, dates: formData.getAll("date").map(String) });
     if (!result.ok) return { error: result.error };
-    await createDatePoll(result.value);
+    await createDatePoll(result.value, formData.get("allAvailable") === "on");
   }
   redirect("/admin");
+}
+
+export async function deletePollAction(pollId: string): Promise<void> {
+  await requireOrganizer();
+  await deletePoll(pollId);
+  revalidatePath("/admin");
 }

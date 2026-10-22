@@ -15,6 +15,8 @@ export type Poll = {
   deadline: Date;
   options: PollOption[];
   audience: Audience;
+  // Date polls only: shows a 모두가능 choice that selects every date.
+  allAvailable: boolean;
 };
 
 type PollRow = {
@@ -24,6 +26,7 @@ type PollRow = {
   description: string;
   deadline: string;
   audience: "all" | "group";
+  all_available: boolean;
   poll_dates: { id: number; candidate_date: string }[];
   poll_items: { id: number; label: string; position: number }[];
   poll_targets: { member_id: string }[];
@@ -32,7 +35,7 @@ type PollRow = {
 // ballot_choices also links polls to poll_dates and poll_items, so name the
 // direct foreign keys.
 const COLUMNS =
-  "id, kind, title, description, deadline, audience, " +
+  "id, kind, title, description, deadline, audience, all_available, " +
   "poll_dates!poll_dates_poll_id_fkey (id, candidate_date), " +
   "poll_items!poll_items_poll_id_fkey (id, label, position), " +
   "poll_targets (member_id)";
@@ -57,6 +60,7 @@ function toPoll(row: PollRow): Poll {
       row.audience === "group"
         ? { kind: "group", memberIds: row.poll_targets.map((t) => t.member_id) }
         : { kind: "all" },
+    allAvailable: row.kind === "date" && row.all_available,
   };
 }
 
@@ -64,7 +68,7 @@ function targetIds(audience: Audience): string[] | null {
   return audience.kind === "group" ? audience.memberIds : null;
 }
 
-export async function createDatePoll(poll: NewPoll): Promise<string> {
+export async function createDatePoll(poll: NewPoll, allAvailable: boolean): Promise<string> {
   const { data, error } = await db().rpc("create_date_poll", {
     p_title: poll.title,
     p_description: poll.description,
@@ -73,7 +77,18 @@ export async function createDatePoll(poll: NewPoll): Promise<string> {
     p_member_ids: targetIds(poll.audience),
   });
   if (error) throw error;
-  return data as string;
+  const pollId = data as string;
+  if (allAvailable) {
+    const flag = await db().from("polls").update({ all_available: true }).eq("id", pollId);
+    if (flag.error) throw flag.error;
+  }
+  return pollId;
+}
+
+// Candidate dates and items, audience and ballots are removed with the poll.
+export async function deletePoll(id: string): Promise<void> {
+  const { error } = await db().from("polls").delete().eq("id", id);
+  if (error) throw error;
 }
 
 export async function createItemPoll(poll: NewItemPoll): Promise<string> {
