@@ -1,0 +1,114 @@
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+
+import { getCurrentMember } from "@/app/current-member";
+import { BallotForm } from "@/components/app/ballot-form";
+import { PageShell } from "@/components/app/page-shell";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { listMembers } from "@/features/members/server";
+import { formatCandidateDate, formatKst, isClosed, tallyPoll } from "@/features/polls";
+import { getPoll, listBallotEntries } from "@/features/polls/server";
+
+export default async function PollPage({ params, searchParams }: PageProps<"/p/[id]">) {
+  const { id } = await params;
+  const { edit } = await searchParams;
+
+  const member = await getCurrentMember();
+  if (!member) redirect(`/?next=/p/${id}`);
+
+  const poll = await getPoll(id);
+  if (!poll) notFound();
+
+  const [members, entries] = await Promise.all([listMembers(), listBallotEntries([poll.id])]);
+  const tally = tallyPoll({
+    dates: poll.dates,
+    ballots: entries,
+    eligibleMemberIds: members.map((m) => m.id),
+  });
+  const myDateIds = entries.filter((entry) => entry.memberId === member.id).map((entry) => entry.dateId);
+  const closed = isClosed(poll.deadline);
+  const showForm = !closed && (myDateIds.length === 0 || edit === "1");
+  const top = new Set(tally.topDateIds);
+
+  return (
+    <PageShell memberName={member.name}>
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            <h1>{poll.title}</h1>
+          </CardTitle>
+          <CardDescription>마감 {formatKst(poll.deadline)}</CardDescription>
+        </CardHeader>
+        {poll.description && (
+          <CardContent>
+            <p className="whitespace-pre-line">{poll.description}</p>
+          </CardContent>
+        )}
+      </Card>
+
+      {closed && (
+        <Alert>
+          <AlertTitle>마감된 투표입니다</AlertTitle>
+          <AlertDescription>더 이상 투표하거나 선택을 바꿀 수 없습니다.</AlertDescription>
+        </Alert>
+      )}
+
+      {showForm ? (
+        <Card>
+          <CardContent>
+            <BallotForm
+              pollId={poll.id}
+              dates={poll.dates.map((d) => ({ id: d.id, label: formatCandidateDate(d.date) }))}
+              initialDateIds={myDateIds}
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <h2>현재 결과</h2>
+            </CardTitle>
+            <CardDescription>
+              {tally.voterCount}명 투표 · 전체 {members.length}명
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="flex flex-col gap-2">
+              {poll.dates.map((date) => {
+                const isTop = top.has(date.id);
+                return (
+                  <li
+                    key={date.id}
+                    data-top={isTop || undefined}
+                    className={cn(
+                      "flex items-center justify-between gap-3 rounded-lg border px-4 py-3",
+                      isTop && "border-primary bg-primary/10"
+                    )}
+                  >
+                    <span className="flex items-center gap-2">
+                      {formatCandidateDate(date.date)}
+                      {isTop && <Badge>가장 많이 가능</Badge>}
+                    </span>
+                    <span className="font-medium tabular-nums">{tally.counts[date.id]}표</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </CardContent>
+          {!closed && (
+            <CardFooter>
+              <Link href={`/p/${poll.id}?edit=1`} className={buttonVariants({ variant: "outline" })}>
+                선택 수정하기
+              </Link>
+            </CardFooter>
+          )}
+        </Card>
+      )}
+    </PageShell>
+  );
+}
